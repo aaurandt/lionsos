@@ -2,6 +2,7 @@
 #include "types.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <sddf/util/printf.h>
 #include <sddf/serial/queue.h>
 #include <sddf/serial/config.h>
@@ -12,6 +13,8 @@
 #include <lions/fs/protocol.h>
 #include <lions/posix/posix.h>
 #include <libmicrokitco.h>
+
+#include <519.h>
 __attribute__((__section__(".serial_client_config"))) serial_client_config_t serial_config;
 __attribute__((__section__(".timer_client_config"))) timer_client_config_t timer_config;
 __attribute__((__section__(".fs_client_config"))) fs_client_config_t fs_config;
@@ -31,10 +34,10 @@ serial_queue_handle_t serial_rx_queue_handle;
 serial_queue_handle_t serial_tx_queue_handle;
 
 int speccpu_main(int, char **argv) {
-
+    sddf_printf("thing should start here\n");
 }
 
-void bench_main(void *arg) {
+void bench_main(void) {
 
     fs_cmpl_t completion;
     int err = fs_command_blocking(&completion, (fs_cmd_t){ .type = FS_CMD_INITIALISE });
@@ -54,8 +57,11 @@ void bench_main(void *arg) {
         "lbm.out 2>>", 
         "lbm.err"
     };
-
-    int rc = speccpu_main(1, argv);
+    while (true) {
+        microkit_dbg_puts("benchcpu about to start\n");
+    }
+    
+    int rc = fiveonenine(1, argv);
 
     printf("BENCH|SPEC CPU finished rc=%d\n", rc);
 
@@ -79,15 +85,19 @@ void init(void)
     stack_ptrs_arg_array_t costacks = { (uintptr_t) worker_stack };
     microkit_cothread_init(&co_controller_mem, WORKER_STACK_SIZE, costacks);
 
-    libc_init();
+    libc_init(NULL);
 
     if (microkit_cothread_spawn(bench_main, NULL) == LIBMICROKITCO_NULL_HANDLE) {
         sddf_printf("init(): ERROR: cannot spawn the doom worker coroutine.\n");
         return;
     }
 
+    printf("checking if the libc is working\n");
+
     sddf_printf("init(): initialisation completed, jumping to worker coroutine.\n");
     microkit_cothread_yield();
+
+    printf("this should theoretically not be reachable\n");
 }
 
 // NOT USED BELOW:

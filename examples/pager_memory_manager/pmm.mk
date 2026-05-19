@@ -26,7 +26,7 @@ endif
 ifeq ($(strip $(SDDF)),)
 $(error SDDF must be specified)
 endif
-
+$(info sddf is $(SDDF))
 ifeq ($(strip $(LIONSOS)),)
 $(error LIONSOS must be specified)
 endif
@@ -131,11 +131,12 @@ CFLAGS := \
 	-I$(SDDF)/include \
 	-I$(SDDF)/include/microkit \
 	-I$(LIBMICROKITCO_PATH) \
-	-I$(TOP)
+	-I$(TOP) \
+	-I$(TOP)/benchmarks/519.lbm_r/src
 include $(LIONSOS)/lib/libc/libc.mk
 
-LDFLAGS := -L$(BOARD_DIR)/lib -L$(LIONS_LIBC)/lib
-LIBS := -lmicrokit -Tmicrokit.ld libsddf_util_debug.a -lc
+LDFLAGS := -L$(BOARD_DIR)/lib -L$(LIONS_LIBC)/lib -L$(TOP)/benchmarks/519.lbm_r/src
+LIBS := -lmicrokit -Tmicrokit.ld libsddf_util_debug.a 519.a -lc
 
 all: $(IMAGES)
 CHECK_FLAGS_BOARD_MD5:=.board_cflags-$(shell echo -- ${CFLAGS} ${BOARD} ${MICROKIT_CONFIG} | shasum | sed 's/ *-//')
@@ -166,7 +167,6 @@ include ${SDDF}/libco/libco.mk
 include ${BLK_DRIVER}/blk_driver.mk
 include ${BLK_COMPONENTS}/blk_components.mk
 include $(SDDF)/drivers/network/$(NET_DRIV_DIR)/eth_driver.mk
-
 FAT_LIBC_LIB := $(LIONS_LIBC)/lib/libc.a
 FAT_LIBC_INCLUDE := $(LIONS_LIBC)/include
 include $(LIONSOS)/components/fs/fat/fat.mk
@@ -181,7 +181,7 @@ $(info opt dir is $(LIBMICROKITCO_CFLAGS))
 # include libmicrokitco.mk
 # my_program.elf: libmicrokitco.a
 
-${IMAGES}: $(LIONS_LIBC)/lib/libc.a libsddf_util_debug.a
+${IMAGES}: $(LIONS_LIBC)/lib/libc.a libsddf_util_debug.a 519.a
 
 %.o: %.c
 	${CC} ${CFLAGS} -c -o $@ $<
@@ -199,9 +199,10 @@ pager.elf: pager.o libsddf_util_debug.a
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 client.o: ${TOP}/client.c 
 	$(CC) -c $(CFLAGS) -I. $< -o client.o
-client.elf: client.o libsddf_util_debug.a libmicrokitco_client.a
+client.elf: client.o libsddf_util_debug.a libmicrokitco_client.a 519.a
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
-
+519.a:
+	$(MAKE) -C $(TOP)/benchmarks/519.lbm_r/src
 
 $(SYSTEM_FILE): $(METAPROGRAM) $(IMAGES) $(DTB)
 	PYTHONPATH=${SDDF}/tools/meta:$$PYTHONPATH \
