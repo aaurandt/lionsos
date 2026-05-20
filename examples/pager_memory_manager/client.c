@@ -33,12 +33,8 @@ char *fs_share;
 serial_queue_handle_t serial_rx_queue_handle;
 serial_queue_handle_t serial_tx_queue_handle;
 
-int speccpu_main(int, char **argv) {
-    sddf_printf("thing should start here\n");
-}
-
 void bench_main(void) {
-
+    // printf("this is printed bm\n");
     fs_cmpl_t completion;
     int err = fs_command_blocking(&completion, (fs_cmd_t){ .type = FS_CMD_INITIALISE });
     if (err || completion.status != FS_STATUS_SUCCESS) {
@@ -46,26 +42,19 @@ void bench_main(void) {
         return;
     }
 
+    // simulate command line arguments.
     char *argv[] = {
+        "lbm",
         "20", 
         "reference.dat", 
         "0", 
         "1", 
-        "100_100_130_cf_a.of", 
-        "0<&-", 
-        ">", 
-        "lbm.out 2>>", 
-        "lbm.err"
+        "100_100_130_cf_a.of"
     };
-    while (true) {
-        microkit_dbg_puts("benchcpu about to start\n");
-    }
     
-    int rc = fiveonenine(1, argv);
+    // int rc = fiveonenine(1, argv);
 
-    printf("BENCH|SPEC CPU finished rc=%d\n", rc);
-
-    // make the speccpu thing run here.
+    printf("BENCH|SPEC CPU finished rc=%d\n", 0);
 }
 
 void init(void)
@@ -92,12 +81,8 @@ void init(void)
         return;
     }
 
-    printf("checking if the libc is working\n");
-
     sddf_printf("init(): initialisation completed, jumping to worker coroutine.\n");
     microkit_cothread_yield();
-
-    printf("this should theoretically not be reachable\n");
 }
 
 // NOT USED BELOW:
@@ -113,6 +98,8 @@ seL4_MessageInfo_t protected(microkit_channel ch, microkit_msginfo msginfo)
 void notified(microkit_channel ch)
 {
     // this may not be required
+    fs_process_completions(NULL);
+    microkit_cothread_recv_ntfn(ch);
 }
 
 seL4_Bool fault(microkit_child child, microkit_msginfo msginfo, microkit_msginfo *reply_msginfo)

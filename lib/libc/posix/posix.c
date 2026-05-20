@@ -32,6 +32,7 @@
 #include <sddf/timer/protocol.h>
 
 #include <lions/posix/posix.h>
+#include <unistd.h>
 
 //TODO: fix to use header; have issue with providing correct libmicrokitco_opts.h
 void microkit_cothread_wait_on_channel(const microkit_channel wake_on);
@@ -176,7 +177,9 @@ void libc_define_syscall(int syscall_num, muslcsys_syscall_t syscall_func) {
 void libc_init_mem();
 void libc_init_io();
 void libc_init_file();
-void libc_init_sock(libc_socket_config_t *);
+void libc_init_sock(libc_socket_config_t *) {
+    
+}
 
 void libc_init(libc_socket_config_t *socket_config) {
     /* Syscall table init */
