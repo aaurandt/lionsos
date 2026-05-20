@@ -97,6 +97,7 @@ void handle_initialise(void) {
     LOG_FATFS("Mounting file system!\n");
     co_data_t *args = microkit_cothread_my_arg();
     if (fs_initialised) {
+        LOG_FATFS("fs already initialised!\n");
         args->status = FS_STATUS_ERROR;
         return;
     }

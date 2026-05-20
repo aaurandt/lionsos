@@ -22,6 +22,7 @@ MICROKIT_TOOL ?= $(MICROKIT_SDK)/bin/microkit
 SDDF := $(LIONSOS)/dep/sddf
 LWIP := $(SDDF)/network/ipstacks/lwip/src
 LIBMICROKITCO_PATH := $(LIONSOS)/dep/libmicrokitco
+DTC := dtc
 SYSTEM_FILE := fileio.system
 IMAGE_FILE := fileio.img
 REPORT_FILE := report.txt
@@ -31,6 +32,8 @@ all: ${IMAGE_FILE}
 include ${SDDF}/tools/make/board/common.mk
 
 METAPROGRAM := $(FILEIO_DIR)/meta.py
+DTS := $(SDDF)/dts/$(MICROKIT_BOARD).dts
+DTB := $(MICROKIT_BOARD).dtb
 FAT := $(LIONSOS)/components/fs/fat
 
 CFLAGS += \
@@ -75,6 +78,9 @@ LIBMICROKITCO_LIBC_INCLUDE := $(LIONS_LIBC)/include
 include $(LIBMICROKITCO_PATH)/libmicrokitco.mk
 
 ${IMAGES}: $(LIONS_LIBC)/lib/libc.a libsddf_util_debug.a
+
+$(DTB): $(DTS)
+	$(DTC) -q -I dts -O dtb $(DTS) > $(DTB)
 
 FORCE:
 

@@ -14,6 +14,8 @@
 #include <lions/posix/posix.h>
 #include <libmicrokitco.h>
 
+#include <dirent.h>
+
 #include <519.h>
 __attribute__((__section__(".serial_client_config"))) serial_client_config_t serial_config;
 __attribute__((__section__(".timer_client_config"))) timer_client_config_t timer_config;
@@ -38,11 +40,25 @@ void bench_main(void) {
     fs_cmpl_t completion;
     int err = fs_command_blocking(&completion, (fs_cmd_t){ .type = FS_CMD_INITIALISE });
     if (err || completion.status != FS_STATUS_SUCCESS) {
-        printf("BENCH|ERROR: Failed to mount\n");
+        printf("BENCH|ERROR: Failed to mount, %d, %d\n", err, completion.status);
         return;
     }
-
-    // simulate command line arguments.
+    // printf("one\n");
+    // DIR *d;
+    // struct dirent *dir;
+    // d = opendir("."); // "." refers to the current directory
+    // printf("two\n");
+    // if (d) {
+    //     while ((dir = readdir(d)) != NULL) {
+    //         printf("%s\n", dir->d_name); // d_name holds the filename
+    //     }
+    //     closedir(d);
+    // } else {
+    //     printf("three\n");
+    //     perror("opendir() error");
+    //     return;
+    // }
+    // // simulate command line arguments.
     char *argv[] = {
         "lbm",
         "20", 
@@ -52,9 +68,9 @@ void bench_main(void) {
         "100_100_130_cf_a.of"
     };
     
-    // int rc = fiveonenine(1, argv);
+    int rc = fiveonenine(6, argv);
 
-    printf("BENCH|SPEC CPU finished rc=%d\n", 0);
+    printf("BENCH|SPEC CPU finished rc=%d\n", rc);
 }
 
 void init(void)

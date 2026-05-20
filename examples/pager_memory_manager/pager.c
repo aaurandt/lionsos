@@ -57,10 +57,10 @@ unsigned int vspaces[MAX_PDS];
 
 static inline pe *retrieve_page(uintptr_t fault_addr, uint32_t pd_idx) {
     if (fault_addr > MMAP_START) {
-        if (INDEX_INTO_MMAP_ARRAY(fault_addr) - 134217128 < 300) sddf_printf("somehow the thing is less than 300\n");
+        if (INDEX_INTO_MMAP_ARRAY(fault_addr) - 134217128 < 300 || INDEX_INTO_MMAP_ARRAY(fault_addr) - 134217128 > 599) sddf_printf("somehow the thing is less than 300 %d\n", INDEX_INTO_MMAP_ARRAY(fault_addr) - 134217128);
         return &page_table[pd_idx][INDEX_INTO_MMAP_ARRAY(fault_addr) - 134217128];
     }
-    if (INDEX_INTO_MMAP_ARRAY(fault_addr) > 299) sddf_printf("somethow thte thing is greater than 299 %d\n", INDEX_INTO_MMAP_ARRAY(fault_addr));
+    if (INDEX_INTO_MMAP_ARRAY(fault_addr) > 299 || INDEX_INTO_MMAP_ARRAY(fault_addr) > 599) sddf_printf("somethow thte thing is greater than 299 %d\n", INDEX_INTO_MMAP_ARRAY(fault_addr));
     return &page_table[pd_idx][INDEX_INTO_MMAP_ARRAY(fault_addr)];
 }
 
