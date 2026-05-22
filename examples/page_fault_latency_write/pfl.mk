@@ -30,7 +30,7 @@ ifeq ($(strip $(TOOLCHAIN)),)
 endif
 
 BUILD_DIR ?= build
-MICROKIT_CONFIG ?= debug
+MICROKIT_CONFIG ?= benchmark
 
 # Allow to user to specify a custom partition
 PARTITION :=

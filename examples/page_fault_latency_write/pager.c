@@ -41,20 +41,22 @@ void init(void)
 
 seL4_Bool fault(microkit_child child, microkit_msginfo msginfo, microkit_msginfo *reply_msginfo)
 {
+    // sddf_printf("fault happened!\n");
     sddf_notify(benchmark_config.start_ch);
     // not required.
     uintptr_t fault_addr = ROUND_DOWN_TO_4K(microkit_mr_get(1));
     uint64_t fsr = microkit_mr_get(2);
     bool is_write = (fsr >> 1) & 1;
     uint32_t pd_idx = child;
-
+    int err;
     if (is_write) {
-        microkit_arm_page_map_rw(get_frame_cap(fault_addr), vspaces[pd_idx], ROUND_DOWN_TO_4K(fault_addr));
+        err = microkit_arm_page_map_rw(get_frame_cap(fault_addr), vspaces[pd_idx], ROUND_DOWN_TO_4K(fault_addr));
     } else {
-        microkit_arm_page_map_ro(get_frame_cap(fault_addr), vspaces[pd_idx], ROUND_DOWN_TO_4K(fault_addr));
+        err = microkit_arm_page_map_ro(get_frame_cap(fault_addr), vspaces[pd_idx], ROUND_DOWN_TO_4K(fault_addr));
     }
     sddf_notify(benchmark_config.stop_ch);
-    return seL4_True;
+    sddf_printf("err is %d\n");
+    return seL4_False;
 }
 
 // NOT USED BELOW:
