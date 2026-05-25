@@ -45,13 +45,18 @@ def generate(
     blk_system = Sddf.Blk(sdf, blk_node, blk_driver, blk_virt)
 
 
-    client = ProtectionDomain("client", "client.elf", priority=1, backed = False)
+    client = ProtectionDomain("client", "client.elf", priority=1, backed = True)
     pager = ProtectionDomain("pager", "pager.elf", priority=198)
     partition =  board.partition
     pager.add_child_pd(client)
-    blk_system.add_client(pager, partition=partition)
+    blk_system.add_client(pager, partition=3) # 3 is the partition to throw away.
     # add my memory regions and other things
-    heap1 = SystemDescription.MemoryRegion(sdf, "heap1", 0x80000, backed=False)
+
+    #paging on
+    heap1 = SystemDescription.MemoryRegion(sdf, "heap1", 0x190000, backed=False)
+
+    # paging off 
+    # heap1 = SystemDescription.MemoryRegion(sdf, "heap1", 0x20000000, backed=True)
     sdf.add_mr(heap1)
     user_heap_map = SystemDescription.Map(heap1, 0x8000000000, "rw")
     client.add_map(user_heap_map)
@@ -66,7 +71,7 @@ def generate(
         fatfs,
         client,
         blk=blk_system,
-        partition=board.partition
+        partition=2 # change this if necessary
     )
 
     if board.name == "maaxboard":

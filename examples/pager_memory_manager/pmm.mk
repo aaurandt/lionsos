@@ -218,7 +218,7 @@ $(SYSTEM_FILE): $(METAPROGRAM) $(IMAGES) $(DTB)
 	$(OBJCOPY) --update-section .blk_virt_config=blk_virt.data blk_virt.elf
 	$(OBJCOPY) --update-section .blk_client_config=blk_client_fatfs.data fat.elf
 	$(OBJCOPY) --update-section .fs_server_config=fs_server_fatfs.data fat.elf
-
+	$(OBJCOPY) --update-section .blk_client_config=blk_client_pager.data pager.elf
 	
 	$(OBJCOPY) --update-section .timer_client_config=timer_client_client.data client.elf
 	$(OBJCOPY) --update-section .serial_client_config=serial_client_client.data client.elf

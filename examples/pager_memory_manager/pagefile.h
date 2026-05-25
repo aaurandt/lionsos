@@ -4,7 +4,7 @@
 #include "types.h"
 
 static int pagefile_size = 0;
-static int pagefile_freed_slots_stack[4000];
+static int pagefile_freed_slots_stack[10000];
 static int pagefile_stack_ptr = 0;
 
 static inline int get_pagefile_slot() {
@@ -25,12 +25,12 @@ static inline void mark_pagefile_slot_free(pe *page) {
 }
 
 // this is to store info to continue the things.
-struct page_request_info page_continuations[10000];
+struct page_request_info page_continuations[10];
 static int request_id = 0;
 int get_request_id() {
-    if (request_id == 9999) {
+    if (request_id == 9) {
         request_id = 0;
-        return 9999;
+        return 9;
     }
     return request_id++;
 }

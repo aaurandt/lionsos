@@ -1,0 +1,12 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+
+spawn picocom -b 115200 /dev/ttyUSB0
+
+expect {
+    "POSIX|ERROR: Unimplemented syscall number: 93" {
+        puts "Detected boot completion"
+        send "\x01\x18"   ;# Ctrl-A Ctrl-X = exit picocom
+    }
+}

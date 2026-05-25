@@ -19,7 +19,7 @@
  * This is rather terrible, but is the simplest option without a
  * huge amount of infrastructure.
  */
-#define MORECORE_AREA_BYTE_SIZE 0x100000
+#define MORECORE_AREA_BYTE_SIZE 0x20000000
 // i think this makes the malloc thing reserve the heap area.
 static alignas(8) char *morecore_area = (char *)0x8000000000;
 

@@ -163,24 +163,24 @@ void MAIN_finalize( const MAIN_Param* param ) {
 /*############################################################################*/
 
 void MAIN_startClock( MAIN_Time* time ) {
-	time->timeScale = 1.0 / sysconf( _SC_CLK_TCK );
-	time->tickStart = times( &(time->timeStart) );
+	// time->timeScale = 1.0 / sysconf( _SC_CLK_TCK );
+	// time->tickStart = times( &(time->timeStart) );
 }
 
 
 /*############################################################################*/
 
 void MAIN_stopClock( MAIN_Time* time, const MAIN_Param* param ) {
-	time->tickStop = times( &(time->timeStop) );
+	// time->tickStop = times( &(time->timeStop) );
 
-	printf( "MAIN_stopClock:\n"
-	        "\tusr: %7.2f sys: %7.2f tot: %7.2f wct: %7.2f MLUPS: %5.2f\n\n",
-	        (time->timeStop.tms_utime - time->timeStart.tms_utime) * time->timeScale,
-	        (time->timeStop.tms_stime - time->timeStart.tms_stime) * time->timeScale,
-	        (time->timeStop.tms_utime - time->timeStart.tms_utime +
-	         time->timeStop.tms_stime - time->timeStart.tms_stime) * time->timeScale,
-	        (time->tickStop           - time->tickStart          ) * time->timeScale,
-	        1.0e-6 * SIZE_X * SIZE_Y * SIZE_Z * param->nTimeSteps /
-	        (time->tickStop           - time->tickStart          ) / time->timeScale );
+	// printf( "MAIN_stopClock:\n"
+	//         "\tusr: %7.2f sys: %7.2f tot: %7.2f wct: %7.2f MLUPS: %5.2f\n\n",
+	//         (time->timeStop.tms_utime - time->timeStart.tms_utime) * time->timeScale,
+	//         (time->timeStop.tms_stime - time->timeStart.tms_stime) * time->timeScale,
+	//         (time->timeStop.tms_utime - time->timeStart.tms_utime +
+	//          time->timeStop.tms_stime - time->timeStart.tms_stime) * time->timeScale,
+	//         (time->tickStop           - time->tickStart          ) * time->timeScale,
+	//         1.0e-6 * SIZE_X * SIZE_Y * SIZE_Z * param->nTimeSteps /
+	//         (time->tickStop           - time->tickStart          ) / time->timeScale );
 }
 #endif

@@ -7,12 +7,13 @@
 
 #include <sddf/util/printf.h>
 
-#define MAX_PDS 64
-#define NUM_PT_ENTRIES 600
+#define MAX_PDS 1
+#define NUM_PT_ENTRIES 1500000
 #define BRK_START 0x8000000000 
 #define MMAP_START 0x9000000000
 #define ROUND_DOWN_TO_4K(x) ((x) & ~(4096 - 1))
 #define INDEX_INTO_MMAP_ARRAY(x) (ROUND_DOWN_TO_4K(x) - BRK_START) / 4096
+#define STACK_INDEX(x) (ROUND_DOWN_TO_4K(x) >> 12) - 72057594036427936
 #define TAU 10 // not too sure what the optimal number for this would be. maybe this is not useful...
 #define PAGEFILE ".pagefile"
 #define MM_PPC_NUM 0

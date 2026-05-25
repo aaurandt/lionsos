@@ -57,10 +57,10 @@ unsigned int vspaces[MAX_PDS];
 
 static inline pe *retrieve_page(uintptr_t fault_addr, uint32_t pd_idx) {
     if (fault_addr > MMAP_START) {
-        if (INDEX_INTO_MMAP_ARRAY(fault_addr) - 134217128 < 300 || INDEX_INTO_MMAP_ARRAY(fault_addr) - 134217128 > 599) sddf_printf("somehow the thing is less than 300 %d\n", INDEX_INTO_MMAP_ARRAY(fault_addr) - 134217128);
+        if (INDEX_INTO_MMAP_ARRAY(fault_addr) - 134217128 < 0 || INDEX_INTO_MMAP_ARRAY(fault_addr) - 134217128 > NUM_PT_ENTRIES - 1) sddf_printf("somehow the thing is less than 300 %d %p\n", INDEX_INTO_MMAP_ARRAY(fault_addr) - 134217128, fault_addr);
         return &page_table[pd_idx][INDEX_INTO_MMAP_ARRAY(fault_addr) - 134217128];
     }
-    if (INDEX_INTO_MMAP_ARRAY(fault_addr) > 299 || INDEX_INTO_MMAP_ARRAY(fault_addr) > 599) sddf_printf("somethow thte thing is greater than 299 %d\n", INDEX_INTO_MMAP_ARRAY(fault_addr));
+    if (INDEX_INTO_MMAP_ARRAY(fault_addr) < 0 || INDEX_INTO_MMAP_ARRAY(fault_addr) > NUM_PT_ENTRIES - 1) sddf_printf("somethow thte thing is greater than 299 %d %p\n", INDEX_INTO_MMAP_ARRAY(fault_addr), fault_addr);
     return &page_table[pd_idx][INDEX_INTO_MMAP_ARRAY(fault_addr)];
 }
 
@@ -82,7 +82,7 @@ void init(void)
     // initialise and check blk queue and config
     frames = (frame_pd_id *) unmapped_frames_addr;
     // should be an assert.
-    blk_config_check_magic(&blk_config);
+    assert(blk_config_check_magic(&blk_config));
     // LOG_CLIENT("config check\n");
     blk_queue_init(&blk_queue, blk_config.virt.req_queue.vaddr, blk_config.virt.resp_queue.vaddr,
                    blk_config.virt.num_buffers);
@@ -110,6 +110,7 @@ seL4_Bool fault(microkit_child child, microkit_msginfo msginfo, microkit_msginfo
     microkit_pd_stop(child);
     // TODO: make sure that i map as rw and with a dirty bit if the fault is a write fault.
     uintptr_t fault_addr = ROUND_DOWN_TO_4K(microkit_mr_get(1));
+    if (fault_addr == 0xFFFFFFFFFFFFF000) sddf_printf("something weird is happening %p %p pc: %p\n", fault_addr, microkit_mr_get(1), microkit_mr_get(0));
     uint64_t fsr = microkit_mr_get(2);
     bool is_write = (fsr >> 1) & 1;
     uint32_t pd_idx = child;
@@ -123,7 +124,7 @@ seL4_Bool fault(microkit_child child, microkit_msginfo msginfo, microkit_msginfo
         if (is_write) old_frame->dirty = true;
         
         int err = microkit_arm_page_map_rw(old_frame->cap, vspaces[pd_idx], ROUND_DOWN_TO_4K(fault_addr));
-        if (err) sddf_printf("there is an error\n");
+        if (err) sddf_printf("there is an error %p %d\n", fault_addr, INDEX_INTO_MMAP_ARRAY(fault_addr));
         if (err) return seL4_True;
         // sddf_printf("before returning true\n");
         microkit_pd_restart(child, current_faults[child].pc);
@@ -175,18 +176,19 @@ void notified(microkit_channel ch)
             microkit_arm_page_unmap(page_continuations[id].frame->cap);
             after_page_out( page_continuations[id].frame, page_continuations[id].pd_idx, page_continuations[id].fault_addr);
         } else {
-            after_page_in(page_continuations[id].frame, page_continuations[id].pd_idx, page_continuations[id].fault_addr, true);
+            after_page_in(page_continuations[id].frame, page_continuations[id].pd_idx, page_continuations[id].fault_addr, true, id);
         }
     }
 }
 
 
 
-void after_page_in(tl_frame_t *frame, uint32_t pd_idx, uintptr_t fault_addr, bool paged_in) {
+void after_page_in(tl_frame_t *frame, uint32_t pd_idx, uintptr_t fault_addr, bool paged_in, int request_id) {
     // map the page to the frame
     if (paged_in) {
+        // sddf_printf("page in: data dest: %p frame data %p\n", (char *)blk_config.data.vaddr, get_frame_data(frame));
         memcpy(get_frame_data(frame),
-       (char *)blk_config.data.vaddr, 4096);
+       (char *)blk_config.data.vaddr + request_id * 4096, 4096);
     }
     int err = 0;
     if (current_faults[pd_idx].write) {
@@ -216,7 +218,7 @@ void page_in(tl_frame_t *frame, uint32_t pd_idx, uintptr_t fault_addr) {
     // queue the read
     int request_id = get_request_id();
     page_continuations[request_id] = (struct page_request_info){ .frame = frame, .pd_idx = pd_idx, .fault_addr = fault_addr, .state = PAGE_IN }; // TODO: fill this out with relevant info.
-    blk_enqueue_req(&blk_queue, BLK_REQ_READ, 0, slot, 1, request_id);
+    blk_enqueue_req(&blk_queue, BLK_REQ_READ, request_id * 4096, slot, 1, request_id);
     sddf_notify(blk_config.virt.id);
 }
 
@@ -225,7 +227,7 @@ void after_page_out(tl_frame_t *frame, uint32_t pd_idx, uintptr_t fault_addr) {
     if (retrieve_page(fault_addr, pd_idx)->pagefile_offset != -1) {
         page_in(frame, pd_idx, fault_addr);
     } else {
-        after_page_in(frame, pd_idx, fault_addr, false);
+        after_page_in(frame, pd_idx, fault_addr, false, 0);
     }
 }
 
@@ -238,9 +240,10 @@ void page_out(tl_frame_t *frame, uint32_t pd_idx, uintptr_t fault_addr) {
     // queue the write with page after_page_out();
     int request_id = get_request_id();
     page_continuations[request_id] = (struct page_request_info){ .frame = frame, .pd_idx = pd_idx, .fault_addr = fault_addr, .state = PAGE_OUT }; // TODO: fill this out with relevant info.
-    char *data_dest = (char *) blk_config.data.vaddr;
+    char *data_dest = (char *) blk_config.data.vaddr + request_id * 4096;
+    // sddf_printf("page out: data dest: %p frame data %p\n", data_dest, get_frame_data(frame));
     memcpy(data_dest, get_frame_data(frame), 4096);
-    blk_enqueue_req(&blk_queue, BLK_REQ_WRITE, 0, slot, 1, request_id);
+    blk_enqueue_req(&blk_queue, BLK_REQ_WRITE, request_id * 4096, slot, 1, request_id);
     sddf_notify(blk_config.virt.id);
 
     // make sure to do the metadata stuff
