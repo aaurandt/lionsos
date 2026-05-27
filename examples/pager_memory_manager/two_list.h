@@ -100,9 +100,11 @@ static void refill_inactive(int pd_idx, int num) {
             if (ptr->referenced) {
                 // move to head
                 ptr->referenced = false;
+                tl_frame_t *prev = ptr->prev;
                 microkit_arm_page_unmap(ptr->cap);
                 remove_from_list(&activelist[pd_idx], ptr);
                 push_head(&activelist[pd_idx], ptr);
+                ptr = prev;
             } else {
                 // move to inactive
                 ptr = demote_page(ptr);
