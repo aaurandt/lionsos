@@ -4,7 +4,7 @@
 #include "types.h"
 
 static int pagefile_size = 0;
-static int pagefile_freed_slots_stack[10000];
+static int pagefile_freed_slots_stack[1000000];
 static int pagefile_stack_ptr = 0;
 
 static inline int get_pagefile_slot() {
@@ -13,6 +13,9 @@ static inline int get_pagefile_slot() {
         return pagefile_freed_slots_stack[--pagefile_stack_ptr];
     }
     // sddf_printf("pagefile slot num is %d\n", pagefile_size);
+    if (pagefile_size > 999999) {
+        sddf_printf("pagefile overflowed!\n");
+    }
     return pagefile_size++;
 }
 

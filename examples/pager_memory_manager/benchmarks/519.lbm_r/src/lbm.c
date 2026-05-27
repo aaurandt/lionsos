@@ -92,8 +92,9 @@ void LBM_swapGrids( LBM_GridPtr* grid1, LBM_GridPtr* grid2 ) {
 void LBM_loadObstacleFile( LBM_Grid grid, const char* filename ) {
 	int x,  y,  z;
 
+	printf("before fopen\n");
 	FILE* file = fopen( filename, "rb" );
-
+	printf("after fopen\n");
 	for( z = 0; z < SIZE_Z; z++ ) {
 		for( y = 0; y < SIZE_Y; y++ ) {
 			for( x = 0; x < SIZE_X; x++ ) {
@@ -102,6 +103,7 @@ void LBM_loadObstacleFile( LBM_Grid grid, const char* filename ) {
 			fgetc( file );
 		}
 		fgetc( file );
+		printf("z is now %d\n", z);
 	}
 
 	fclose( file );

@@ -111,8 +111,8 @@ seL4_Bool fault(microkit_child child, microkit_msginfo msginfo, microkit_msginfo
     // TODO: make sure that i map as rw and with a dirty bit if the fault is a write fault.
     uintptr_t fault_addr = ROUND_DOWN_TO_4K(microkit_mr_get(1));
     if (fault_addr == 0xFFFFFFFFFFFFF000) sddf_printf("something weird is happening %p %p pc: %p\n", fault_addr, microkit_mr_get(1), microkit_mr_get(0));
-    uint64_t fsr = microkit_mr_get(2);
-    bool is_write = (fsr >> 1) & 1;
+    uint64_t fsr = microkit_mr_get(3);
+    bool is_write = (fsr >> 6) & 1;
     uint32_t pd_idx = child;
     // uint64_t program_counter = microkit_mr_get(0);
     pe *page = retrieve_page(fault_addr, pd_idx);
@@ -121,11 +121,18 @@ seL4_Bool fault(microkit_child child, microkit_msginfo msginfo, microkit_msginfo
     current_faults[child].write = is_write;
     if (old_frame) {
         old_frame->referenced = true;
-        if (is_write) old_frame->dirty = true;
+        if (is_write) { 
+            old_frame->dirty = true;
+            if (page->pagefile_offset != -1) mark_pagefile_slot_free(page);
+            int err = microkit_arm_page_map_rw(old_frame->cap, vspaces[pd_idx], ROUND_DOWN_TO_4K(fault_addr));
+            if (err) sddf_printf("there is an error %p %d\n", fault_addr, INDEX_INTO_MMAP_ARRAY(fault_addr));
+            if (err) return seL4_True;
+        } else {
+            int err = microkit_arm_page_map_ro(old_frame->cap, vspaces[pd_idx], ROUND_DOWN_TO_4K(fault_addr));
+            if (err) sddf_printf("there is an error %p %d\n", fault_addr, INDEX_INTO_MMAP_ARRAY(fault_addr));
+            if (err) return seL4_True;
+        }
         
-        int err = microkit_arm_page_map_rw(old_frame->cap, vspaces[pd_idx], ROUND_DOWN_TO_4K(fault_addr));
-        if (err) sddf_printf("there is an error %p %d\n", fault_addr, INDEX_INTO_MMAP_ARRAY(fault_addr));
-        if (err) return seL4_True;
         // sddf_printf("before returning true\n");
         microkit_pd_restart(child, current_faults[child].pc);
         return seL4_True;
@@ -189,6 +196,8 @@ void after_page_in(tl_frame_t *frame, uint32_t pd_idx, uintptr_t fault_addr, boo
         // sddf_printf("page in: data dest: %p frame data %p\n", (char *)blk_config.data.vaddr, get_frame_data(frame));
         memcpy(get_frame_data(frame),
        (char *)blk_config.data.vaddr + request_id * 4096, 4096);
+    } else {
+        memset(get_frame_data(frame), 0, 4096);
     }
     int err = 0;
     if (current_faults[pd_idx].write) {
@@ -206,7 +215,7 @@ void after_page_in(tl_frame_t *frame, uint32_t pd_idx, uintptr_t fault_addr, boo
     frame->pd_idx = pd_idx;
     // sddf_printf("sending from reply cap\n");
     // sddf_printf("before returning true\n");
-    if (frame->page->pagefile_offset != -1) mark_pagefile_slot_free(frame->page);
+    // if (frame->page->pagefile_offset != -1) mark_pagefile_slot_free(frame->page);
     microkit_pd_restart(pd_idx, current_faults[pd_idx].pc);
     // microkit_send(4);
 }
