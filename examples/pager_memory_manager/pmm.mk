@@ -227,13 +227,10 @@ $(SYSTEM_FILE): $(METAPROGRAM) $(IMAGES) $(DTB)
 $(IMAGE_FILE) $(REPORT_FILE): $(IMAGES) $(SYSTEM_FILE)
 	$(MICROKIT_TOOL) $(SYSTEM_FILE) --search-path $(BUILD_DIR) --board $(MICROKIT_BOARD) --config $(MICROKIT_CONFIG) -o $(IMAGE_FILE) -r $(REPORT_FILE)
 
-qemu_disk:
-	$(LIONSOS)/dep/sddf/tools/mkvirtdisk $@ 1 512 16777216 GPT
-
 # qemu_disk:
-# 	$(SDDF)/tools/mkvirtdisk disk 1 512 16777216 GPT
+# 	$(LIONSOS)/dep/sddf/tools/mkvirtdisk $@ 1 512 16777216 GPT
 
-qemu: ${IMAGE_FILE} qemu_disk
+qemu: ${IMAGE_FILE} 
 	$(QEMU) -machine virt,virtualization=on \
 		-cpu cortex-a53 \
 		-serial mon:stdio \
@@ -242,8 +239,8 @@ qemu: ${IMAGE_FILE} qemu_disk
 		-nographic \
 		-global virtio-mmio.force-legacy=false \
 		-d guest_errors \
-		-drive file=qemu_disk,if=none,format=raw,id=hd \
-		-device virtio-blk-device,drive=hd,bus=virtio-mmio-bus.1 
+		-drive file=/dev/mmcblk0,if=none,format=raw,id=hd \
+		-device virtio-blk-device,drive=hd,bus=virtio-mmio-bus.1
 
 
 # $(SYSTEM_FILE): $(METAPROGRAM) $(IMAGES) $(DTB)
