@@ -13,6 +13,7 @@
 #include <lions/fs/protocol.h>
 #include <lions/posix/posix.h>
 #include <libmicrokitco.h>
+#include <time.h>
 
 #include <dirent.h>
 
@@ -34,7 +35,10 @@ char *fs_share;
 
 serial_queue_handle_t serial_rx_queue_handle;
 serial_queue_handle_t serial_tx_queue_handle;
-
+static uint64_t timespec_to_ns(struct timespec ts)
+{
+    return (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
+}
 void bench_main(void) {
     // printf("this is printed bm\n");
     fs_cmpl_t completion;
@@ -67,10 +71,25 @@ void bench_main(void) {
         "1", 
         "100_100_130_cf_a.of"
     };
-    
+    struct timespec start_ts;
+    struct timespec end_ts;
+    microkit_msginfo start_message = microkit_msginfo_new(0, 1);
+    microkit_mr_set(0, START);
+    microkit_ppcall(0, start_message);
+    clock_gettime(CLOCK_MONOTONIC, &start_ts);
     int rc = fiveonenine(6, argv);
+    clock_gettime(CLOCK_MONOTONIC, &end_ts);
+    microkit_msginfo stop_message = microkit_msginfo_new(0, 1);
+    microkit_mr_set(0, STOP);
+    microkit_ppcall(0, stop_message);
 
     printf("BENCH|SPEC CPU finished rc=%d\n", rc);
+    uint64_t start_ns = timespec_to_ns(start_ts);
+    uint64_t end_ns = timespec_to_ns(end_ts);
+    uint64_t elapsed_ns = end_ns - start_ns;
+    printf("elapsed ns: %llu\n", (unsigned long long)elapsed_ns);
+    printf("elapsed us: %llu\n", (unsigned long long)(elapsed_ns / 1000));
+    printf("elapsed ms: %llu\n", (unsigned long long)(elapsed_ns / 1000000));
 }
 
 void init(void)

@@ -49,7 +49,7 @@ int fiveonenine( int nArgs, char* arg[] ) {
 			LBM_showGridStatistics( *srcGrid );
 		}
 	}
-
+	printf("I should be returning now\n");
 #if !defined(SPEC)
 	MAIN_stopClock( &time, &param );
 #endif

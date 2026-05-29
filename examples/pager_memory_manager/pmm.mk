@@ -6,13 +6,14 @@
 # This Makefile is copied into the build directory
 # and operated on from there.
 #
-IMAGES := blk_driver.elf blk_virt.elf memory_manager.elf pager.elf client.elf timer_driver.elf \
+vpath %.c ${SDDF} ${LIONSOS}/examples/pager_memory_manager
+IMAGES := blk_driver.elf blk_virt.elf memory_manager.elf pager.elf client.elf timer_driver.elf idle.elf \
 eth_driver.elf \
 fat.elf \
 serial_driver.elf \
 	serial_virt_rx.elf \
 	serial_virt_tx.elf \
-
+benchmark.elf
 SUPPORTED_BOARDS := \
 	qemu_virt_aarch64 \
 	maaxboard
@@ -78,7 +79,7 @@ $(error Unsupported ARCH given)
 endif
 
 BUILD_DIR ?= build
-MICROKIT_CONFIG ?= debug
+MICROKIT_CONFIG ?= benchmark
 
 ifeq ($(strip $(NVME)),1)
 	BLK_DRIV_DIR := nvme
@@ -98,7 +99,7 @@ endif
 IMAGE_FILE := loader.img
 REPORT_FILE  := report.txt
 SYSTEM_FILE := pager_memory_manager.system
-
+BENCHMARK := $(SDDF)/benchmark
 
 
 TOP := ${LIONSOS}/examples/pager_memory_manager
@@ -170,10 +171,11 @@ include $(SDDF)/drivers/network/$(NET_DRIV_DIR)/eth_driver.mk
 FAT_LIBC_LIB := $(LIONS_LIBC)/lib/libc.a
 FAT_LIBC_INCLUDE := $(LIONS_LIBC)/include
 include $(LIONSOS)/components/fs/fat/fat.mk
-
+include ${BENCHMARK}/benchmark.mk
 LIBMICROKITCO_CFLAGS_client := -O2 -I$(TOP)
 LIBMICROKITCO_LIBC_INCLUDE := $(LIONS_LIBC)/include
 include $(LIBMICROKITCO_PATH)/libmicrokitco.mk
+
 $(info libpath is $(LIBMICROKITCO_PATH))
 
 $(info opt dir is $(LIBMICROKITCO_CFLAGS))
@@ -181,7 +183,7 @@ $(info opt dir is $(LIBMICROKITCO_CFLAGS))
 # include libmicrokitco.mk
 # my_program.elf: libmicrokitco.a
 
-${IMAGES}: $(LIONS_LIBC)/lib/libc.a libsddf_util_debug.a 519.a
+${IMAGES}: $(LIONS_LIBC)/lib/libc.a libsddf_util_debug.a 519.a 
 
 %.o: %.c
 	${CC} ${CFLAGS} -c -o $@ $<
@@ -197,7 +199,7 @@ pager.o: ${TOP}/pager.c ${TOP}/pagefile.h ${TOP}/frame_table.h ${TOP}/types.h
 	$(CC) -c $(CFLAGS) -I. $< -o pager.o
 pager.elf: pager.o libsddf_util_debug.a
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
-client.o: ${TOP}/client.c 
+client.o: ${TOP}/client.c | $(LIONS_LIBC)/include
 	$(CC) -c $(CFLAGS) -I. $< -o client.o
 client.elf: client.o libsddf_util_debug.a libmicrokitco_client.a 519.a
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
@@ -206,7 +208,7 @@ client.elf: client.o libsddf_util_debug.a libmicrokitco_client.a 519.a
 
 $(SYSTEM_FILE): $(METAPROGRAM) $(IMAGES) $(DTB)
 	PYTHONPATH=${SDDF}/tools/meta:$$PYTHONPATH \
-	$(PYTHON) $(METAPROGRAM) --sddf $(SDDF) --board $(MICROKIT_BOARD) --dtb $(DTB) --output . --sdf $(SYSTEM_FILE)
+	$(PYTHON) $(METAPROGRAM) --sddf $(SDDF) --board $(MICROKIT_BOARD) --dtb $(DTB) --output . --sdf $(SYSTEM_FILE) --objcopy $(OBJCOPY) $(PARTITION_ARG) --smp ../core_config/single_core.json
 
 	$(OBJCOPY) --update-section .device_resources=serial_driver_device_resources.data serial_driver.elf
 	$(OBJCOPY) --update-section .serial_driver_config=serial_driver_config.data serial_driver.elf
@@ -240,7 +242,7 @@ qemu: ${IMAGE_FILE}
 		-global virtio-mmio.force-legacy=false \
 		-d guest_errors \
 		-drive file=/dev/mmcblk0,if=none,format=raw,id=hd \
-		-device virtio-blk-device,drive=hd,bus=virtio-mmio-bus.1
+		-device virtio-blk-device,drive=hd,bus=virtio-mmio-bus.1 
 
 
 # $(SYSTEM_FILE): $(METAPROGRAM) $(IMAGES) $(DTB)

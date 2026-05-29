@@ -19,6 +19,11 @@
 #define MM_PPC_NUM 0
 #define FRAME_DATA 0x8000000000
 
+enum benchmark_trigger {
+    START,
+    STOP
+};
+
 extern uintptr_t frame_map_addr;
 uintptr_t frame_map_addr = 0;
 

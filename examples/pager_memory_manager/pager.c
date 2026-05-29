@@ -11,6 +11,8 @@
 #include <sddf/util/printf.h>
 #include <string.h>
 #include "pager.h"
+#include <sddf/benchmark/config.h>
+#include <sddf/benchmark/bench.h>
 
 // #define FRAME_DATA 0x8000000000
 
@@ -24,7 +26,8 @@ uint64_t thing;
 // maybe: blk_system.add_client(pager, partition=partition)
 __attribute__((__section__(".blk_client_config"))) blk_client_config_t blk_config;
 static blk_queue_handle_t blk_queue;
-
+__attribute__((__section__(".benchmark_client_config"))) benchmark_client_config_t benchmark_config;
+benchmark_client_config_t *bench;
 
 
 frame_pd_id *frames;
@@ -262,20 +265,28 @@ void page_out(tl_frame_t *frame, uint32_t pd_idx, uintptr_t fault_addr) {
 }
 
 /**
- * This is when a free is called.
+ * This gets called to start / stop a benchmark running.
  */
 seL4_MessageInfo_t protected(microkit_channel ch, microkit_msginfo msginfo)
 {
-    int pd_idx = microkit_mr_get(0);
-    uintptr_t addr = microkit_mr_get(1);
+    // int pd_idx = microkit_mr_get(0);
+    // uintptr_t addr = microkit_mr_get(1);
 
-    pe *page = retrieve_page(addr, pd_idx);
-    tl_frame_t *frame = page->frame_addr;
-    page->frame_addr = NULL;
-    if (page->pagefile_offset != -1) mark_pagefile_slot_free(page);
+    // pe *page = retrieve_page(addr, pd_idx);
+    // tl_frame_t *frame = page->frame_addr;
+    // page->frame_addr = NULL;
+    // if (page->pagefile_offset != -1) mark_pagefile_slot_free(page);
 
-    // i also need to add this frame to the free list.
-    free_frame(frame);
+    // // i also need to add this frame to the free list.
+    // free_frame(frame);
+
+    enum benchmark_trigger cmd = microkit_mr_get(0);
+    if (cmd == START) {
+        sddf_notify(benchmark_config.start_ch);
+    } else if (cmd == STOP) {
+        sddf_notify(benchmark_config.stop_ch);
+    }
+
 }
 
 
