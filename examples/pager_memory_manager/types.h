@@ -7,16 +7,27 @@
 
 #include <sddf/util/printf.h>
 
-#define MAX_PDS 1
-#define NUM_PT_ENTRIES 2000000
-#define BRK_START 0x8000000000 
-#define MMAP_START 0x9000000000
-#define ROUND_DOWN_TO_4K(x) ((x) & ~(4096 - 1))
-#define INDEX_INTO_MMAP_ARRAY(x) (ROUND_DOWN_TO_4K(x) - BRK_START) / 4096
-#define STACK_INDEX(x) (ROUND_DOWN_TO_4K(x) >> 12) - 72057594036427936
-#define TAU 10 // not too sure what the optimal number for this would be. maybe this is not useful...
-#define PAGEFILE ".pagefile"
-#define MM_PPC_NUM 0
+// number of protection domains supported by pager
+#define MAX_PDS 2
+// number of unmapped frames
+#define HEAP_PAGES 2000000
+// number of stack pages
+#define STACK_PAGES 2
+// where the heap starts
+#define BRK_START 0x8000000000
+#define BRK_END 0x9000000000
+#define STACK_TOP 0x100000000000
+#define STACK_BOTTOM 0x0FFFFFFFE000
+
+#define PAGE_BITS 12ULL
+#define PAGE_SIZE 4096ULL
+#define PAGE_MASK 0xFFFFFFFFFFFFF000ULL
+
+#define ROUND_DOWN_TO_4K(x)      ((uintptr_t)(x) & PAGE_MASK)
+#define INDEX_INTO_MMAP_ARRAY(x) ((ROUND_DOWN_TO_4K(x) - (uintptr_t)BRK_START) >> PAGE_BITS)
+#define INDEX_INTO_HEAP(x) ((x - BRK_START) >> PAGE_BITS)
+#define INDEX_INTO_STACK(x) ((x - STACK_BOTTOM) >> PAGE_BITS)
+// where frame data is mapped into for pager metadata
 #define FRAME_DATA 0x8000000000
 
 enum benchmark_trigger {
@@ -26,23 +37,6 @@ enum benchmark_trigger {
 
 extern uintptr_t frame_map_addr;
 uintptr_t frame_map_addr = 0;
-
-struct mmap_node
-{
-    /* data */
-    uintptr_t addr;
-    struct mmap_node *next;
-    struct mmap_node *prev;
-};
-
-
-
-typedef struct Rights {
-    bool read;
-    bool write;
-    bool grant;
-    bool grant_reply;
-} Rights;
 
 typedef unsigned long long Cap;
 
@@ -58,17 +52,8 @@ typedef struct pe {
     int pagefile_offset;
 } pe;
 
-// typedef struct FrameInfo {
-//     Cap cap;
-//     uint64_t last_accessed; // for working set.
-//     pe *page; // the page this frame is mapped to.
-//     uint32_t next;
-//     int pd_idx;
-// } FrameInfo;
-
 typedef struct FrameInfo {
     seL4_CPtr cap;
-    uint64_t last_accessed;
     pe *page;
     uint32_t next;
     uint32_t prev;
@@ -86,23 +71,6 @@ struct page_request_info {
     struct frame *frame;
     enum paging_state state;
 };
-
-/**
- * This actually should wipe the data an the page tables etc...
- */
-void myfree(uint16_t mm, uintptr_t addr) {
-    microkit_msginfo message = microkit_msginfo_new(0, 2);
-    microkit_mr_set(0, 0);
-    microkit_mr_set(1, addr);
-    microkit_ppcall(mm, message);
-}
-
-uintptr_t mymalloc(uint64_t mm) {
-    microkit_msginfo message = microkit_msginfo_new(0, 1);
-    microkit_mr_set(0, 1);
-    microkit_ppcall(mm, message);
-    return microkit_mr_get(0);
-}
 
 /**
  * if page is not null that means it is mapped

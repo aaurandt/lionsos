@@ -24,7 +24,7 @@ uint64_t num_frames;
 
 // assumes that there is only one child.
 inline Cap get_frame_cap(uintptr_t fault_addr) {
-    return ((frame_pd_id *)(unmapped_frames_addr + ((ROUND_DOWN_TO_4K(fault_addr - BRK_START) / 4096) * sizeof(frame_pd_id))))->frame_cap;
+    return ((frame_pd_id *)(unmapped_frames_addr + (((fault_addr - BRK_START) / 4096) * sizeof(frame_pd_id))))->frame_cap;
 }
 
 __attribute__((__section__(".benchmark_client_config"))) benchmark_client_config_t benchmark_config;
@@ -49,9 +49,9 @@ seL4_Bool fault(microkit_child child, microkit_msginfo msginfo, microkit_msginfo
     uint32_t pd_idx = child;
 
     if (is_write) {
-        microkit_arm_page_map_rw(get_frame_cap(fault_addr), vspaces[pd_idx], ROUND_DOWN_TO_4K(fault_addr));
+        microkit_arm_page_map_rw(get_frame_cap(fault_addr), vspaces[pd_idx], fault_addr);
     } else {
-        microkit_arm_page_map_ro(get_frame_cap(fault_addr), vspaces[pd_idx], ROUND_DOWN_TO_4K(fault_addr));
+        microkit_arm_page_map_ro(get_frame_cap(fault_addr), vspaces[pd_idx], fault_addr);
     }
     // sddf_notify(benchmark_config.stop_ch);
     return seL4_True;

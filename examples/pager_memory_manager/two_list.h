@@ -20,7 +20,7 @@ static void refill_inactive(int pd_idx, int num);
 static struct list activelist[MAX_PDS];
 static struct list inactivelist[MAX_PDS];
 static struct list freelist[MAX_PDS];
-tl_frame_t frame_table[MAX_PDS][NUM_PT_ENTRIES]; // this is a static list of frames
+tl_frame_t frame_table[MAX_PDS][HEAP_PAGES]; // this is a static list of frames
 int free_frames_idx[MAX_PDS] = {-1};
 
 /**
