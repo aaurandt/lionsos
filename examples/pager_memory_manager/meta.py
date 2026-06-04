@@ -233,6 +233,10 @@ def generate(
         timer_driver,
         serial_driver,
         serial_virt_tx,
+        pager,
+        blk_driver,
+        blk_virt,
+        fatfs
     ]
     pds_per_core = {
     }
@@ -345,10 +349,6 @@ def generate(
 
     pds = [
         serial_virt_rx,
-        pager,
-        fatfs,
-        blk_driver,
-        blk_virt,
     ]
 
     

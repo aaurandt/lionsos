@@ -10,5 +10,8 @@
     "pager": 0,
     "client1_net_copier": 0,
     "uart_driver": 0,
-    "example_pd1": 0
+    "example_pd1": 0,
+    "blk_driver": 0,
+    "blk_virt": 0,
+    "fatfs": 0
 }

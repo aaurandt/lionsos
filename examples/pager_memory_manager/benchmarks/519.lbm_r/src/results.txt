@@ -1,0 +1,68 @@
+{CORE 0: 
+L1 i-cache misses: 78136447
+L1 d-cache misses: 106284205
+L1 i-tlb misses: 9047629
+L1 d-tlb misses: 10497674
+Instructions: 3953520285
+Branch mispredictions: 39223681
+}
+Total utilisation details: 
+{
+KernelUtilisation: 12894751972
+KernelEntries: 17003083
+NumberSchedules: 11549809
+TotalUtilisation: 854284771677
+}
+Utilisation details for PD: timer_driver (0)
+{
+KernelUtilisation: 12062
+KernelEntries: 4
+NumberSchedules: 4
+TotalUtilisation: 39328
+}
+Utilisation details for PD: serial_driver (1)
+{
+KernelUtilisation: 68413
+KernelEntries: 59
+NumberSchedules: 59
+TotalUtilisation: 581221
+}
+Utilisation details for PD: serial_virt_tx (2)
+{
+KernelUtilisation: 74064
+KernelEntries: 65
+NumberSchedules: 64
+TotalUtilisation: 132775
+}
+Utilisation details for PD: pager (3)
+{
+KernelUtilisation: 4206310902
+KernelEntries: 4580221
+NumberSchedules: 2885699
+TotalUtilisation: 8239430008
+}
+Utilisation details for PD: blk_driver (4)
+{
+KernelUtilisation: 3468286398
+KernelEntries: 6017277
+NumberSchedules: 3012341
+TotalUtilisation: 7324533455
+}
+Utilisation details for PD: blk_virt (5)
+{
+KernelUtilisation: 2170508768
+KernelEntries: 3009365
+NumberSchedules: 2258134
+TotalUtilisation: 4264561729
+}
+Utilisation details for PD: fatfs (6)
+{
+KernelUtilisation: 9858608
+KernelEntries: 12732
+NumberSchedules: 10161
+TotalUtilisation: 1039737158
+}
+BENCH|SPEC CPU finished rc=0
+elapsed ns: 889879907000
+elapsed us: 889879907
+elapsed ms: 889879

@@ -65,7 +65,7 @@ void bench_main(void) {
     // // simulate command line arguments.
     char *argv[] = {
         "lbm",
-        "20", 
+        "1", 
         "reference.dat", 
         "0", 
         "1", 
