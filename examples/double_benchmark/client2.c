@@ -49,7 +49,7 @@ void bench_main(void) {
         printf("BENCH|ERROR: Failed to mount, %d, %d\n", err, completion.status);
         return;
     }
-    // printf("one\n");
+    printf("two\n");
     // DIR *d;
     // struct dirent *dir;
     // d = opendir("."); // "." refers to the current directory
@@ -67,7 +67,7 @@ void bench_main(void) {
     // // simulate command line arguments.
     char *argv[] = {
         "lbm",
-        "20", 
+        "1", 
         "reference.dat", 
         "0", 
         "1", 
@@ -76,11 +76,9 @@ void bench_main(void) {
     struct timespec start_ts;
     struct timespec end_ts;
 
-    sddf_notify(benchmark_config.start_ch);
     clock_gettime(CLOCK_MONOTONIC, &start_ts);
     int rc = fiveonenine(6, argv);
     clock_gettime(CLOCK_MONOTONIC, &end_ts);
-    sddf_notify(benchmark_config.stop_ch);
 
     printf("BENCH|SPEC CPU finished rc=%d\n", rc);
     uint64_t start_ns = timespec_to_ns(start_ts);

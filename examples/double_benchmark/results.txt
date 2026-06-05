@@ -1,0 +1,265 @@
+# single  core double:
+BENCH|LOG: ENABLE_BENCHMARKING defined
+BENCH|LOG: ENABLE_PMU_EVENTS defined
+BENCH|LOG: CONFIG_BENCHMARK_TRACK_UTILISATION defined
+two
+one
+MAIN_printInfo:
+	grid size      : 100 x 100 x 130 = 1.30 * 10^6 Cells
+	nTimeSteps     : 1
+	result file    : reference.dat
+	action         : nothing
+	simulation type: channel flow
+	obstacle file  : 100_100_130_cf_a.of
+
+LBM_allocateGrid: allocated 204.5 MByte
+LBM_allocateGrid: allocated 204.5 MByte
+MAIN_printInfo:
+	grid size      : 100 x 100 x 130 = 1.30 * 10^6 Cells
+	nTimeSteps     : 1
+	result file    : reference.dat
+	action         : nothing
+	simulation type: channel flow
+	obstacle file  : 100_100_130_cf_a.of
+
+LBM_allocateGrid: allocated 204.5 MByte
+LBM_allocateGrid: allocated 204.5 MByte
+LBM_showGridStatistics:
+	nObstacleCells:  498440 nAccelCells:       0 nFluidCells:  801560
+	minRho: 1.000000 maxRho: 1.000000 Mass: 1.300000e+06
+	minU  : 0.000000 maxU  : 0.000000
+
+LBM_showGridStatistics:
+	nObstacleCells:  498440 nAccelCells:       0 nFluidCells:  801560
+	minRho: 0.999900 maxRho: 1.005048 Mass: 1.300022e+06
+	minU  : 0.000000 maxU  : 0.005022
+
+BENCH|SPEC CPU finished rc=0
+benchmark 2 elapsed ns: 24111410000
+benchmark 2 elapsed us: 24111410
+benchmark 2 elapsed ms: 24111
+LBM_showGridStatistics:
+	nObstacleCells:  498440 nAccelCells:       0 nFluidCells:  801560
+	minRho: 1.000000 maxRho: 1.000000 Mass: 1.300000e+06
+	minU  : 0.000000 maxU  : 0.000000
+
+LBM_showGridStatistics:
+	nObstacleCells:  498440 nAccelCells:       0 nFluidCells:  801560
+	minRho: 0.999900 maxRho: 1.005048 Mass: 1.300022e+06
+	minU  : 0.000000 maxU  : 0.005022
+
+{CORE 0: 
+L1 i-cache misses: 79403749
+L1 d-cache misses: 153016785
+L1 i-tlb misses: 9689182
+L1 d-tlb misses: 12243235
+Instructions: 595660024
+Branch mispredictions: 41140348
+}
+Total utilisation details: 
+{
+KernelUtilisation: 13121703047
+KernelEntries: 17109401
+NumberSchedules: 11627602
+TotalUtilisation: 862919845894
+}
+Utilisation details for PD: timer_driver (0)
+{
+KernelUtilisation: 13839
+KernelEntries: 5
+NumberSchedules: 5
+TotalUtilisation: 41238
+}
+Utilisation details for PD: serial_driver (1)
+{
+KernelUtilisation: 164892
+KernelEntries: 137
+NumberSchedules: 137
+TotalUtilisation: 1312713
+}
+Utilisation details for PD: serial_virt_tx (2)
+{
+KernelUtilisation: 148871
+KernelEntries: 140
+NumberSchedules: 140
+TotalUtilisation: 258377
+}
+Utilisation details for PD: pager (3)
+{
+KernelUtilisation: 4286186328
+KernelEntries: 4655054
+NumberSchedules: 2960532
+TotalUtilisation: 8329735274
+}
+Utilisation details for PD: blk_driver (4)
+{
+KernelUtilisation: 3546500111
+KernelEntries: 6058935
+NumberSchedules: 3033225
+TotalUtilisation: 7556671112
+}
+Utilisation details for PD: blk_virt (5)
+{
+KernelUtilisation: 2199243362
+KernelEntries: 3040892
+NumberSchedules: 2284484
+TotalUtilisation: 4534203668
+}
+Utilisation details for PD: fatfs (6)
+{
+KernelUtilisation: 10756497
+KernelEntries: 13690
+NumberSchedules: 11119
+TotalUtilisation: 1041380832
+}
+Utilisation details for PD: fatfs2 (7)
+{
+KernelUtilisation: 13046035
+KernelEntries: 16691
+NumberSchedules: 14120
+TotalUtilisation: 1046957752
+}
+Utilisation details for PD: client2 (8)
+{
+KernelUtilisation: 16747212
+KernelEntries: 17324
+NumberSchedules: 17321
+TotalUtilisation: 4651212079
+}
+BENCH|SPEC CPU finished rc=0
+client2 elapsed ns: 898874780000
+client2 elapsed us: 898874780
+client2 elapsed ms: 898874
+# double core double:
+
+two
+MAIN_printInfo:
+	grid size      : 100 x 100 x 130 = 1.30 * 10^6 Cells
+	nTimeSteps     : 1
+	result file    : reference.dat
+	action         : nothing
+	simulation type: channel flow
+	obstacle file  : 100_100_130_cf_a.of
+
+LBM_allocateGrid: allocated 204.5 MByte
+LBM_allocateGrid: allocated 204.5 MByte
+BENCH|LOG: ENABLE_BENCHMARKING defined
+BENCH|LOG: ENABLE_PMU_EVENTS defined
+BENCH|LOG: CONFIG_BENCHMARK_TRACK_UTILISATION defined
+one
+MAIN_printInfo:
+	grid size      : 100 x 100 x 130 = 1.30 * 10^6 Cells
+	nTimeSteps     : 1
+	result file    : reference.dat
+	action         : nothing
+	simulation type: channel flow
+	obstacle file  : 100_100_130_cf_a.of
+
+LBM_allocateGrid: allocated 204.5 MByte
+LBM_allocateGrid: allocated 204.5 MByte
+LBM_showGridStatistics:
+	nObstacleCells:  498440 nAccelCells:       0 nFluidCells:  801560
+	minRho: 1.000000 maxRho: 1.000000 Mass: 1.300000e+06
+	minU  : 0.000000 maxU  : 0.000000
+
+LBM_showGridStatistics:
+	nObstacleCells:  498440 nAccelCells:       0 nFluidCells:  801560
+	minRho: 0.999900 maxRho: 1.005048 Mass: 1.300022e+06
+	minU  : 0.000000 maxU  : 0.005022
+
+BENCH|SPEC CPU finished rc=0
+benchmark 2 elapsed ns: 18917455000
+benchmark 2 elapsed us: 18917455
+benchmark 2 elapsed ms: 18917
+LBM_showGridStatistics:
+	nObstacleCells:  498440 nAccelCells:       0 nFluidCells:  801560
+	minRho: 1.000000 maxRho: 1.000000 Mass: 1.300000e+06
+	minU  : 0.000000 maxU  : 0.000000
+
+LBM_showGridStatistics:
+	nObstacleCells:  498440 nAccelCells:       0 nFluidCells:  801560
+	minRho: 0.999900 maxRho: 1.005048 Mass: 1.300022e+06
+	minU  : 0.000000 maxU  : 0.005022
+
+{CORE 0: 
+L1 i-cache misses: 73911860
+L1 d-cache misses: 116170076
+L1 i-tlb misses: 9261472
+L1 d-tlb misses: 11979055
+Instructions: 1888348817
+Branch mispredictions: 36654327
+}
+Total utilisation details: 
+{
+KernelUtilisation: 0
+KernelEntries: 0
+NumberSchedules: 0
+TotalUtilisation: 0
+}
+Utilisation details for PD: timer_driver (0)
+{
+KernelUtilisation: 17828
+KernelEntries: 4
+NumberSchedules: 4
+TotalUtilisation: 42966
+}
+Utilisation details for PD: serial_driver (1)
+{
+KernelUtilisation: 198766
+KernelEntries: 94
+NumberSchedules: 94
+TotalUtilisation: 1313885
+}
+Utilisation details for PD: serial_virt_tx (2)
+{
+KernelUtilisation: 141981
+KernelEntries: 82
+NumberSchedules: 74
+TotalUtilisation: 244565
+}
+Utilisation details for PD: pager (3)
+{
+KernelUtilisation: 257692524423382518
+KernelEntries: 5041548
+NumberSchedules: 3347026
+TotalUtilisation: 1260445099287
+}
+Utilisation details for PD: blk_driver (4)
+{
+KernelUtilisation: 6529987681
+KernelEntries: 6067383
+NumberSchedules: 3033287
+TotalUtilisation: 11801126952
+}
+Utilisation details for PD: blk_virt (5)
+{
+KernelUtilisation: 237498908507771
+KernelEntries: 3102928
+NumberSchedules: 2346524
+TotalUtilisation: 237501837074366
+}
+Utilisation details for PD: fatfs (6)
+{
+KernelUtilisation: 20806969
+KernelEntries: 15446
+NumberSchedules: 12875
+TotalUtilisation: 1056018766
+}
+Utilisation details for PD: fatfs2 (7)
+{
+KernelUtilisation: 0
+KernelEntries: 0
+NumberSchedules: 0
+TotalUtilisation: 0
+}
+Utilisation details for PD: client2 (8)
+{
+KernelUtilisation: 0
+KernelEntries: 0
+NumberSchedules: 0
+TotalUtilisation: 0
+}
+BENCH|SPEC CPU finished rc=0
+client2 elapsed ns: 902451229000
+client2 elapsed us: 902451229
+client2 elapsed ms: 902451

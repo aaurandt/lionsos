@@ -47,7 +47,7 @@ void bench_main(void) {
         printf("BENCH|ERROR: Failed to mount, %d, %d\n", err, completion.status);
         return;
     }
-    // printf("one\n");
+    printf("one\n");
     // DIR *d;
     // struct dirent *dir;
     // d = opendir("."); // "." refers to the current directory
@@ -65,7 +65,7 @@ void bench_main(void) {
     // // simulate command line arguments.
     char *argv[] = {
         "lbm",
-        "20", 
+        "1", 
         "reference.dat", 
         "0", 
         "1", 
@@ -87,9 +87,9 @@ void bench_main(void) {
     uint64_t start_ns = timespec_to_ns(start_ts);
     uint64_t end_ns = timespec_to_ns(end_ts);
     uint64_t elapsed_ns = end_ns - start_ns;
-    printf("elapsed ns: %llu\n", (unsigned long long)elapsed_ns);
-    printf("elapsed us: %llu\n", (unsigned long long)(elapsed_ns / 1000));
-    printf("elapsed ms: %llu\n", (unsigned long long)(elapsed_ns / 1000000));
+    printf("client2 elapsed ns: %llu\n", (unsigned long long)elapsed_ns);
+    printf("client2 elapsed us: %llu\n", (unsigned long long)(elapsed_ns / 1000));
+    printf("client2 elapsed ms: %llu\n", (unsigned long long)(elapsed_ns / 1000000));
 }
 
 void init(void)

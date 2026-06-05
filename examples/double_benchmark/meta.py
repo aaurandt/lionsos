@@ -196,6 +196,7 @@ def generate(
 
     client2 = ProtectionDomain("client2", "client2.elf", priority=1, backed = True)
     heap2 = SystemDescription.MemoryRegion(sdf, "heap2", 0x20000000, backed = True)
+    sdf.add_mr(heap2)
     client2heap = SystemDescription.Map(heap2, 0x8000000000, "rw")
     client2.add_map(client2heap)
     client = ProtectionDomain("client", "client.elf", priority=1, backed = False)
@@ -235,7 +236,7 @@ def generate(
         fatfs2,
         client2,
         blk=blk_system,
-        partition=2 # change this if necessary
+        partition=1 # change this if necessary
     )
 
     if board.name == "maaxboard":
@@ -245,6 +246,12 @@ def generate(
         timer_driver,
         serial_driver,
         serial_virt_tx,
+        pager,
+        blk_driver,
+        blk_virt,
+        fatfs,
+        fatfs2,
+        client2 # i probably want this and fatfs2 on a separate core, the smp thing should not be too much of a problem I believe.
     ]
     pds_per_core = {
     }
@@ -362,12 +369,6 @@ def generate(
 
     pds = [
         serial_virt_rx,
-        pager,
-        client2,
-        fatfs,
-        fatfs2,
-        blk_driver,
-        blk_virt,
     ]
 
     
@@ -419,6 +420,262 @@ def generate(
     with open(f"{output_dir}/{sdf_file}", "w+") as f:
             f.write(sdf.render())
 
+def generate_double(
+    sdf_file: str,
+    output_dir: str,
+    dtb: Optional[DeviceTree],
+    get_core: Callable[[str], int]
+):
+    serial_node = dtb.node(board.serial)
+    assert serial_node is not None
+    blk_node = dtb.node(board.blk)
+    assert blk_node is not None
+    timer_node = dtb.node(board.timer)
+    assert timer_node is not None
+    
+    timer_driver = ProtectionDomain(
+        "timer_driver", "timer_driver.elf", priority=254, cpu=0)
+    timer_system = Sddf.Timer(sdf, timer_node, timer_driver)
+
+    serial_driver = ProtectionDomain(
+        "serial_driver", "serial_driver.elf", priority=100, cpu=0)
+    serial_virt_tx = ProtectionDomain(
+        "serial_virt_tx", "serial_virt_tx.elf", priority=99, cpu=0)
+    serial_virt_rx = ProtectionDomain(
+        "serial_virt_rx", "serial_virt_rx.elf", priority=99, cpu=0)
+    serial_system = Sddf.Serial(
+        sdf, serial_node, serial_driver, serial_virt_tx, virt_rx=serial_virt_rx)
+
+    blk_driver = ProtectionDomain("blk_driver", "blk_driver.elf", priority=200, cpu=0)
+    blk_virt = ProtectionDomain(
+        "blk_virt", "blk_virt.elf", priority=199, stack_size=0x2000, cpu=0)
+    blk_system = Sddf.Blk(sdf, blk_node, blk_driver, blk_virt)
+
+    client2 = ProtectionDomain("client2", "client2.elf", priority=1, backed = True, cpu=1)
+    heap2 = SystemDescription.MemoryRegion(sdf, "heap2", 0x20000000, backed = True)
+    sdf.add_mr(heap2)
+    client2heap = SystemDescription.Map(heap2, 0x8000000000, "rw")
+    client2.add_map(client2heap)
+    client = ProtectionDomain("client", "client.elf", priority=1, backed = False, cpu=0)
+    pager = ProtectionDomain("pager", "pager.elf", priority=198, cpu=0)
+    client_pager_bench_cmds = SystemDescription.Channel(client, pager, a_id=0, b_id=0, pp_a=True);
+    sdf.add_channel(client_pager_bench_cmds);
+    partition =  board.partition
+    pager.add_child_pd(client)
+    blk_system.add_client(pager, partition=3) # 3 is the partition to throw away.
+    # add my memory regions and other things
+
+    #paging on
+    heap1 = SystemDescription.MemoryRegion(sdf, "heap1", 0x190000, backed=False)
+    # heap1 = SystemDescription.MemoryRegion(sdf, "heap1", 0x7d0000, backed=False)
+    # paging off 
+    # heap1 = SystemDescription.MemoryRegion(sdf, "heap1", 0x20000000, backed=True)
+    sdf.add_mr(heap1)
+    user_heap_map = SystemDescription.Map(heap1, 0x8000000000, "rw")
+    client.add_map(user_heap_map)
+
+    serial_system.add_client(client)
+    timer_system.add_client(client)
+    serial_system.add_client(client2)
+    timer_system.add_client(client2)
+    fatfs = ProtectionDomain("fatfs", "fat.elf", priority=96, cpu=0)
+    fatfs2 = ProtectionDomain("fatfs2", "fat2.elf", priority=96, cpu=1)
+    fs = LionsOs.FileSystem.Fat(
+        sdf,
+        fatfs,
+        client,
+        blk=blk_system,
+        partition=2 # change this if necessary
+    )
+
+    fs2 = LionsOs.FileSystem.Fat(
+        sdf,
+        fatfs2,
+        client2,
+        blk=blk_system,
+        partition=1 # change this if necessary
+    )
+
+    if board.name == "maaxboard":
+        timer_system.add_client(blk_driver)
+
+    child_pds = [
+        timer_driver,
+        serial_driver,
+        serial_virt_tx,
+        pager,
+        blk_driver,
+        blk_virt,
+        fatfs,
+        fatfs2,
+        client2 # i probably want this and fatfs2 on a separate core, the smp thing should not be too much of a problem I believe.
+    ]
+    pds_per_core = {
+    }
+
+    for pd in child_pds:
+        try:
+            core = get_core(pd.name)
+        except:
+            raise ValueError(
+                f"PD {pd.name} is missing from your core allocation configuration file!"
+            )
+        if core in pds_per_core:
+            pds_per_core[core].append(pd)
+        else:
+            pds_per_core[core] = [pd]
+    num_cores = len(pds_per_core)
+
+    # Allocate benchmarking resources
+    core_objs = [{} for _ in range(num_cores)]
+    for i in range(num_cores):
+        core = sorted(pds_per_core)[i]
+        core_objs[i]["core"] = core
+
+        # Create benchmark and idle PDs for each active core
+        core_objs[i]["idle_elf"] = copy_elf("idle", "idle", core)
+        core_objs[i]["idle_pd"] = ProtectionDomain(
+            f"bench_idle{core}", core_objs[i]["idle_elf"], priority=1, cpu=core
+        )
+        sdf.add_pd(core_objs[i]["idle_pd"])
+
+        core_objs[i]["bench_elf"] = copy_elf("benchmark", "benchmark", core)
+        core_objs[i]["bench_pd"] = ProtectionDomain(
+            f"bench{core}", core_objs[i]["bench_elf"], priority=254, cpu=core
+        )
+        sdf.add_pd(core_objs[i]["bench_pd"])
+
+        # Benchmark PD requires serial output
+        serial_system.add_client(core_objs[i]["bench_pd"])
+
+        # Create formatted list of children for benchmark PD
+        core_objs[i]["children"] = []
+        for pd in pds_per_core[core]:
+            child_id = core_objs[i]["bench_pd"].add_child_pd(pd)
+            core_objs[i]["children"].append((child_id, pd.name))
+
+        # Create benchmark to idle init channel
+        core_objs[i]["init_ch"] = Channel(
+            core_objs[i]["idle_pd"], core_objs[i]["bench_pd"]
+        )
+        sdf.add_channel(core_objs[i]["init_ch"])
+
+        # Create benchmarking start and stop channels
+        if i == 0:
+            # First active core is notified by benchmarking client
+            core_objs[i]["start_ch"] = Channel(pager, core_objs[i]["bench_pd"])
+            core_objs[i]["stop_ch"] = Channel(pager, core_objs[i]["bench_pd"])
+
+            # TODO: allocate another core for the client2
+        elif i == 1:
+            core_objs[i]["start_ch"] = Channel(client2, core_objs[i]["bench_pd"])
+            core_objs[i]["stop_ch"] = Channel(client2, core_objs[i]["bench_pd"])
+        else:
+            # Other cores are notified by benchmark PD on previous core
+            core_objs[i]["start_ch"] = Channel(
+                core_objs[i - 1]["bench_pd"], core_objs[i]["bench_pd"]
+            )
+            core_objs[i]["stop_ch"] = Channel(
+                core_objs[i - 1]["bench_pd"], core_objs[i]["bench_pd"]
+            )
+
+        sdf.add_channel(core_objs[i]["start_ch"])
+        sdf.add_channel(core_objs[i]["stop_ch"])
+
+        # Add cycle counter memory region for idle to share counts with benchmarking client
+        cycle_counters_mr = MemoryRegion(sdf, f"cycle_counters{core}", 0x1000)
+        sdf.add_mr(cycle_counters_mr)
+        core_objs[i]["idle_pd"].add_map(Map(cycle_counters_mr, 0x5_000_000, perms="rw"))
+        client.add_map(Map(cycle_counters_mr, 0x20_000_000 + 0x1000 * i, perms="r"))
+
+        # Create configuration structures to be serialised
+        core_objs[i]["idle_config"] = BenchmarkIdleConfig(
+            0x5_000_000, core_objs[i]["init_ch"].pd_a_id
+        )
+        if i == 0:
+            # We first create a config for the benchmarking client
+            bench_client_config = BenchmarkClientConfig(
+                core_objs[i]["start_ch"].pd_a_id,
+                core_objs[i]["stop_ch"].pd_a_id,
+                list(((0x20_000_000 + 0x1000 * i) for i in range(num_cores))),
+            )
+        else:
+            # Then we create the config for the benchmark PD on the previous core
+            core_objs[i - 1]["bench_config"] = BenchmarkConfig(
+                core_objs[i - 1]["start_ch"].pd_b_id,
+                core_objs[i]["start_ch"].pd_a_id,
+                core_objs[i - 1]["stop_ch"].pd_b_id,
+                core_objs[i]["stop_ch"].pd_a_id,
+                core_objs[i - 1]["init_ch"].pd_b_id,
+                core_objs[i - 1]["core"],
+                False,
+                core_objs[i - 1]["children"],
+            )
+
+    # Finally create the last benchmark PD config
+    core_objs[num_cores - 1]["bench_config"] = BenchmarkConfig(
+        core_objs[num_cores - 1]["start_ch"].pd_b_id,
+        0,
+        core_objs[num_cores - 1]["stop_ch"].pd_b_id,
+        0,
+        core_objs[num_cores - 1]["init_ch"].pd_b_id,
+        core_objs[num_cores - 1]["core"],
+        True,
+        core_objs[num_cores - 1]["children"],
+    )
+
+    pds = [
+        serial_virt_rx,
+    ]
+
+    
+    for pd in pds:
+        sdf.add_pd(pd)
+
+    assert fs.connect()
+    assert fs.serialise_config(output_dir)
+    assert fs2.connect()
+    assert fs2.serialise_config(output_dir)
+    assert serial_system.connect()
+    assert serial_system.serialise_config(output_dir)
+    assert timer_system.connect()
+    assert timer_system.serialise_config(output_dir)
+    assert blk_system.connect()
+    assert blk_system.serialise_config(output_dir)
+
+    with open(f"{output_dir}/benchmark_client_config.data", "wb+") as f:
+        f.write(bench_client_config.serialise())
+    update_elf_section(
+        "pager.elf", "benchmark_client_config", "benchmark_client_config"
+    )
+
+    update_elf_section(
+        "client2.elf", "benchmark_client_config", "benchmark_client_config"
+    )
+
+    for i in range(num_cores):
+        core = core_objs[i]["core"]
+        update_elf_section(
+            core_objs[i]["bench_elf"],
+            "serial_client_config",
+            "serial_client_bench",
+            core,
+        )
+
+        with open(f"{output_dir}/benchmark_config{core}.data", "wb+") as f:
+            f.write(core_objs[i]["bench_config"].serialise())
+        update_elf_section(
+            core_objs[i]["bench_elf"], "benchmark_config", "benchmark_config", core
+        )
+
+        with open(f"{output_dir}/benchmark_idle_config{core}.data", "wb+") as f:
+            f.write(core_objs[i]["idle_config"].serialise())
+        update_elf_section(
+            core_objs[i]["idle_elf"], "benchmark_config", "benchmark_idle_config", core
+        )
+
+    with open(f"{output_dir}/{sdf_file}", "w+") as f:
+            f.write(sdf.render())
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -449,5 +706,5 @@ if __name__ == "__main__":
     if board.arch != SystemDescription.Arch.X86_64:
         with open(args.dtb, "rb") as f:
             dtb = DeviceTree(f.read())
-
-    generate(args.sdf, args.output, dtb, get_core)
+    generate_double(args.sdf, args.output, dtb, get_core)
+    # generate(args.sdf, args.output, dtb, get_core)

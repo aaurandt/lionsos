@@ -13,7 +13,8 @@ fat.elf \
 serial_driver.elf \
 	serial_virt_rx.elf \
 	serial_virt_tx.elf \
-benchmark.elf fat2.elf
+benchmark.elf \
+fat2.elf
 SUPPORTED_BOARDS := \
 	qemu_virt_aarch64 \
 	maaxboard
@@ -171,6 +172,9 @@ include $(SDDF)/drivers/network/$(NET_DRIV_DIR)/eth_driver.mk
 FAT_LIBC_LIB := $(LIONS_LIBC)/lib/libc.a
 FAT_LIBC_INCLUDE := $(LIONS_LIBC)/include
 include $(LIONSOS)/components/fs/fat/fat.mk
+
+fat2.elf: fat.elf
+	cp $< $@
 include ${BENCHMARK}/benchmark.mk
 LIBMICROKITCO_CFLAGS_client := -O2 -I$(TOP)
 LIBMICROKITCO_LIBC_INCLUDE := $(LIONS_LIBC)/include
@@ -229,9 +233,9 @@ $(SYSTEM_FILE): $(METAPROGRAM) $(IMAGES) $(DTB)
 	$(OBJCOPY) --update-section .serial_client_config=serial_client_client.data client.elf
 	$(OBJCOPY) --update-section .fs_client_config=fs_client_client.data client.elf
 	
-	$(OBJCOPY) --update-section .timer_client_config=timer_client_client.data client2.elf
-	$(OBJCOPY) --update-section .serial_client_config=serial_client_client.data client2.elf
-	$(OBJCOPY) --update-section .fs_client_config=fs_client_client.data client2.elf
+	$(OBJCOPY) --update-section .timer_client_config=timer_client_client2.data client2.elf
+	$(OBJCOPY) --update-section .serial_client_config=serial_client_client2.data client2.elf
+	$(OBJCOPY) --update-section .fs_client_config=fs_client_client2.data client2.elf
 	$(OBJCOPY) --update-section .blk_client_config=blk_client_fatfs2.data fat2.elf
 	$(OBJCOPY) --update-section .fs_server_config=fs_server_fatfs2.data fat2.elf
 $(IMAGE_FILE) $(REPORT_FILE): $(IMAGES) $(SYSTEM_FILE)

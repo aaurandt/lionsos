@@ -16,8 +16,8 @@ override BUILD_DIR := $(abspath ${BUILD_DIR})
 export BUILD_DIR
 export SDDF := $(abspath ../../dep/sddf)
 override MICROKIT_SDK := $(abspath ${MICROKIT_SDK})
-export MICROKIT_CONFIG ?= benchmark
-SMP_CONFIG ?=core_config/single_core.json
+export MICROKIT_CONFIG ?= smp-benchmark
+SMP_CONFIG ?=core_config/two_core.json
 IMAGE_FILE := ${BUILD_DIR}/loader.img 
 
 all: ${IMAGE_FILE} 
