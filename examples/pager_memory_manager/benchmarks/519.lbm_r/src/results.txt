@@ -66,3 +66,95 @@ BENCH|SPEC CPU finished rc=0
 elapsed ns: 889879907000
 elapsed us: 889879907
 elapsed ms: 889879
+
+BENCH|LOG: ENABLE_BENCHMARKING defined
+BENCH|LOG: ENABLE_PMU_EVENTS defined
+BENCH|LOG: CONFIG_BENCHMARK_TRACK_UTILISATION defined
+MAIN_printInfo:
+	grid size      : 100 x 100 x 130 = 1.30 * 10^6 Cells
+	nTimeSteps     : 1
+	result file    : reference.dat
+	action         : nothing
+	simulation type: channel flow
+	obstacle file  : 100_100_130_cf_a.of
+
+LBM_allocateGrid: allocated 204.5 MByte
+LBM_allocateGrid: allocated 204.5 MByte
+LBM_showGridStatistics:
+	nObstacleCells:  498440 nAccelCells:       0 nFluidCells:  801560
+	minRho: 1.000000 maxRho: 1.000000 Mass: 1.300000e+06
+	minU  : 0.000000 maxU  : 0.000000
+
+LBM_showGridStatistics:
+	nObstacleCells:  498440 nAccelCells:       0 nFluidCells:  801560
+	minRho: 0.999900 maxRho: 1.005048 Mass: 1.300022e+06
+	minU  : 0.000000 maxU  : 0.005022
+
+{CORE 0: 
+L1 i-cache misses: 78109289
+L1 d-cache misses: 106291555
+L1 i-tlb misses: 9057966
+L1 d-tlb misses: 10508617
+Instructions: 1533189274
+Branch mispredictions: 39470817
+}
+Total utilisation details: 
+{
+KernelUtilisation: 12892376269
+KernelEntries: 17004779
+NumberSchedules: 11551511
+TotalUtilisation: 856954278167
+}
+Utilisation details for PD: timer_driver (0)
+{
+KernelUtilisation: 12734
+KernelEntries: 4
+NumberSchedules: 4
+TotalUtilisation: 39549
+}
+Utilisation details for PD: serial_driver (1)
+{
+KernelUtilisation: 67961
+KernelEntries: 60
+NumberSchedules: 60
+TotalUtilisation: 558115
+}
+Utilisation details for PD: serial_virt_tx (2)
+{
+KernelUtilisation: 69228
+KernelEntries: 63
+NumberSchedules: 62
+TotalUtilisation: 119498
+}
+Utilisation details for PD: pager (3)
+{
+KernelUtilisation: 4211599517
+KernelEntries: 4589055
+NumberSchedules: 2894533
+TotalUtilisation: 8248791099
+}
+Utilisation details for PD: blk_driver (4)
+{
+KernelUtilisation: 3465688899
+KernelEntries: 6017287
+NumberSchedules: 3012359
+TotalUtilisation: 7335258276
+}
+Utilisation details for PD: blk_virt (5)
+{
+KernelUtilisation: 2171536117
+KernelEntries: 3009358
+NumberSchedules: 2258127
+TotalUtilisation: 4266062030
+}
+Utilisation details for PD: fatfs (6)
+{
+KernelUtilisation: 9914626
+KernelEntries: 12787
+NumberSchedules: 10216
+TotalUtilisation: 1039858664
+}
+BENCH|SPEC CPU finished rc=0
+elapsed ns: 892660643000
+elapsed us: 892660643
+elapsed ms: 892660
