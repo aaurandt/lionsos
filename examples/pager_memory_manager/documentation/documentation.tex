@@ -293,4 +293,257 @@ line/.style={draw, thick, ->}
 \end{tikzpicture}}
 \end{figure}
 Paging follows the flow shown above, except that paging in and out operations are done asynchronously through the blk driver. We facilitate this by having a \texttt{page\_continuations} array which allows the pager to index into using the child id and store the paging data which contains the frame, child id, fault address and a enum which tells the pager when notified that the blk operation is finished whether it was a page in or out. There is also a similar array of integers named \texttt{current\_faults} also indexed by child id that stores the fault address to make sure that the current fault is not serviced multiple times. Since we assume that PD's are singlethreaded, there should only be one VM fault happening at any time for a single PD. 
+
+\section{More Detailed System Diagram}
+
+
+\begin{figure}[ht]
+\centering
+\resizebox{400pt}{!}{
+\begin{tikzpicture}[
+    font=\sffamily,
+    box/.style={
+        draw,
+        thick,
+        rounded corners=4pt,
+        minimum width=3.1cm,
+        minimum height=1.15cm,
+        align=center
+    },
+    libcbox/.style={
+        draw,
+        thick,
+        rounded corners=4pt,
+        minimum width=3.1cm,
+        minimum height=1.15cm,
+        align=center
+    },
+    hwbox/.style={
+        draw,
+        thick,
+        rounded corners=4pt,
+        minimum width=3.1cm,
+        minimum height=1cm,
+        align=center,
+        fill=gray!20
+    },
+    arrow/.style={
+        ->,
+        thick,
+        >=Latex
+    },
+    both/.style={
+        <->,
+        thick,
+        >=Latex
+    },
+    dashedarrow/.style={
+        ->,
+        thick,
+        dashed,
+        >=Latex
+    },
+    boundary/.style={
+        dashed,
+        thick,
+        rounded corners=6pt
+    }
+]
+
+% =================================================
+% Coordinates
+% =================================================
+
+% Main columns:
+% x = -5.0 : timer / pager side
+% x =  0.5 : client / filesystem / block side
+% x =  5.8 : serial side
+
+% =================================================
+% Client protection domain
+% =================================================
+
+\node[box, fill=blue!12] (client) at (-3.8,5.0)
+{Client\\User Program};
+
+\node[libcbox, fill=purple!12] (libc) at (1.2,5.0)
+{libc};
+
+\draw[boundary]
+    (-6,3.75) rectangle (3.4,6.25);
+
+\node[font=\bfseries] at (-1.1,6.85)
+{Client protection domain};
+
+% =================================================
+% Service layer
+% =================================================
+
+\node[box, fill=cyan!12] (pager) at (-5.0,1.0)
+{Pager\\{\small VM faults}\\{\small frame management}};
+
+\node[box, fill=green!12] (fatfs) at (1.2,1.0)
+{fatfs\\{\small file system service}};
+
+\node[box, fill=teal!12] (serialvirt) at (6.8,1.0)
+{serial\_virt\\{\small TX/RX virtualiser}};
+
+% =================================================
+% Driver / virtualisation layer
+% =================================================
+
+\node[box, fill=red!10] (timerdrv) at (-5.0,-3.0)
+{timer\_driver};
+
+\node[box, fill=yellow!20] (blkvirt) at (1.2,-3.0)
+{blk\_virt\\{\small block virtualiser}};
+
+\node[box, fill=orange!15] (serialdrv) at (6.8,-3.0)
+{serial\_driver};
+
+% =================================================
+% Hardware layer
+% =================================================
+
+\node[hwbox] (timerhw) at (-5.0,-7.0)
+{Timer HW};
+
+\node[box, fill=orange!22] (blkdrv) at (1.2,-7.0)
+{blk\_driver\\{\small block driver}};
+
+\node[hwbox] (uart) at (6.8,-7.0)
+{UART / Serial HW};
+
+\node[hwbox] (blkdev) at (1.2,-10.5)
+{Block Device};
+
+% =================================================
+% App <-> libc
+% =================================================
+
+\draw[arrow, bend left=10]
+    (client.east) to
+    node[above] {\small libc calls}
+    (libc.west);
+
+\draw[dashedarrow, bend left=10]
+    (libc.west) to
+    node[below] {\small results}
+    (client.east);
+
+% =================================================
+% Memory / pager path
+% =================================================
+
+% =================================================
+% Filesystem and block path
+% =================================================
+
+\draw[arrow]
+    (libc.south) --
+    node[right] {\small open/read/write}
+    (fatfs.north);
+
+\draw[both]
+    (fatfs.south) --
+    node[right] {\small FS block ops}
+    (blkvirt.north);
+
+\draw[arrow]
+    (pager.south) -- ++(0,-1) -| ++(2,0) |-
+    node[pos=0.7,above] {\small page in/out}
+    (blkvirt.west);
+
+\draw[dashedarrow]
+    (blkvirt.north) -- ++(-2,1) -| ++(0,1) |- 
+    node[pos=0.7,above] {\small notify}
+    (pager.east);
+
+\draw[both]
+    (blkvirt.south) --
+    node[right] {\small block req/resp}
+    (blkdrv.north);
+
+\draw[arrow]
+    (blkdrv.south) --
+    node[right] {\small MMIO/DMA}
+    (blkdev.north);
+
+\draw[dashedarrow]
+    (blkdev.east) -- ++(0.45,0) |- 
+    node[pos=0.35,right] {\small IRQ/notify}
+    (blkdrv.east);
+
+% =================================================
+% Serial path
+% =================================================
+
+\draw[arrow]
+    (libc.east) -- ++(0.8,0) -| 
+    node[pos=0.32,above] {\small printf/getchar}
+    (serialvirt.north);
+
+\draw[both]
+    (serialvirt.south) --
+    node[right] {\small TX/RX}
+    (serialdrv.north);
+
+\draw[arrow]
+    (serialdrv.south) --
+    node[right] {\small device access}
+    (uart.north);
+
+\draw[dashedarrow]
+    (uart.east) -- ++(0.45,0) |- 
+    node[pos=0.35,right] {\small IRQ}
+    (serialdrv.east);
+
+% =================================================
+% Timer path routed around outside
+% =================================================
+
+\draw[arrow]
+    (libc.north west)
+    -- ++(0,0.35)
+    -- ++(-6.5,0)
+    -- ++(0,-8.0)
+    -- ++(1.6,0)
+    node[pos=0.85,above] {\small sleep/time/timers}
+    -- (timerdrv.north);
+
+\draw[arrow]
+    (timerdrv.south) --
+    node[right] {\small timer access}
+    (timerhw.north);
+
+\draw[dashedarrow]
+    (timerhw.west) -- ++(-0.45,0) |- 
+    node[pos=0.35,left] {\small IRQ}
+    (timerdrv.west);
+
+% =================================================
+% Layer labels
+% =================================================
+
+\node[font=\bfseries\small, anchor=east] at (-9.2,5.0) {Application};
+\node[font=\bfseries\small, anchor=east] at (-9.6,1.0) {Services};
+\node[font=\bfseries\small, anchor=east] at (-8,-4.0) {Virtualisers / drivers};
+\node[font=\bfseries\small, anchor=east] at (-8.2,-7.0) {Hardware-facing};
+
+% =================================================
+% Legend
+% =================================================
+
+\draw[arrow] (-6.9,-10.15) -- (-6.0,-10.15);
+\node[anchor=west, font=\small] at (-5.9,-10.15) {request / call};
+
+\draw[both] (-6.9,-10.55) -- (-6.0,-10.55);
+\node[anchor=west, font=\small] at (-5.9,-10.55) {bidirectional IPC};
+
+\draw[dashedarrow] (-6.9,-10.95) -- (-6.0,-10.95);
+\node[anchor=west, font=\small] at (-5.9,-10.95) {return / IRQ / notify};
+
+\end{tikzpicture}}
+\end{figure}
+
 \end{document}
