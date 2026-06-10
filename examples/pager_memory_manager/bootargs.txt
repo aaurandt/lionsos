@@ -1,0 +1,10 @@
+bootargs: console=ttymxc0,115200 root=/dev/nfs ip=dhcp nfsroot=:,v3,tcp
+bootcmd: run distro_bootcmd;run envboot;mmc dev ${mmcdev}; if mmc rescan; then if run loadbootscript; then run bootscript; else if run loadimage; then run mmcbootdto; else run netboot; fi; fi; fi;
+
+linux: 
+dhcp; tftpboot 0x41000000 /maaxboard_josh/Image; tftpboot 0x40000000 /maaxboard_terryb/linux_ipbench/linux.dtb; tftpboot 0x4c000000 /maaxboard_josh/joshuainitramfs.img; setenv bootargs "console=ttymxc0,115200 console=tty1 fbcon=rotate:0"; booti 0x41000000 0x4c000000 0x40000000
+
+root
+
+mount /dev/mmcblk0p2 .
+cd linux_paging
